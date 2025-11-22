@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 # Import game modules
 import clash_royale
 import fortnite
+import brawl_stars
 
 # ============================
 # LOAD ENVIRONMENTS
@@ -15,6 +16,7 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 CLASH_ROYALE_API_KEY = os.getenv("CLASH_ROYALE_API_KEY")
 FORTNITE_API_KEY = os.getenv("FORTNITE_API_KEY")
+BRAWL_STARS_API_KEY = os.getenv("BRAWL_STARS_API_KEY")
 
 if not DISCORD_TOKEN:
     print("❌ No DISCORD_TOKEN found.")
@@ -28,11 +30,95 @@ if not FORTNITE_API_KEY:
     print("❌ No FORTNITE_API_KEY found.")
     exit(1)
 
+if not BRAWL_STARS_API_KEY:
+    print("❌ No BRAWL_STARS_API_KEY found.")
+    exit(1)
+
 # ============================
 # BOT SETUP
 # ============================
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+
+# ============================
+# BRAWL STARS COMMANDS
+# ============================
+@bot.tree.command(name="brawlstars", description="Get Brawl Stars stats")
+@app_commands.describe(
+    player="Player tag (e.g., #Q8YYOJU) OR registered username"
+)
+async def brawlstars_cmd(interaction: discord.Interaction, player: str):
+    await interaction.response.defer()
+    
+    # Check if it's a registered username first
+    player_tag = brawl_stars.get_player_tag(player)
+    
+    # If not registered, treat as player tag
+    if not player_tag:
+        player_tag = player
+        # Ensure the tag starts with #
+        if not player_tag.startswith("#"):
+            player_tag = "#" + player_tag
+    
+    data = brawl_stars.fetch_brawl_stars_stats(player_tag, BRAWL_STARS_API_KEY)
+    
+    if not data:
+        await interaction.followup.send(
+            f"❌ Could not find Brawl Stars player `{player_tag}`.\n"
+            f"💡 Make sure the tag is correct or use `/bsregister` to save your tag!"
+        )
+        return
+    
+    embed = brawl_stars.build_brawl_stars_embed(data)
+    await interaction.followup.send(embed=embed)
+
+
+@bot.tree.command(name="bsregister", description="Register your Brawl Stars player tag")
+@app_commands.describe(
+    username="Your username (used for quick lookups)",
+    player_tag="Your Brawl Stars player tag (e.g., #Q8YYOJU)"
+)
+async def bs_register(interaction: discord.Interaction, username: str, player_tag: str):
+    await interaction.response.defer()
+    
+    # Verify the player tag works
+    if not player_tag.startswith("#"):
+        player_tag = "#" + player_tag
+    
+    data = brawl_stars.fetch_brawl_stars_stats(player_tag, BRAWL_STARS_API_KEY)
+    
+    if not data:
+        await interaction.followup.send(
+            f"❌ Could not find player with tag `{player_tag}`.\n"
+            f"Please make sure the tag is correct!"
+        )
+        return
+    
+    # Register the player
+    saved_tag = brawl_stars.register_player(username, player_tag)
+    player_name = data.get("name", username)
+    
+    await interaction.followup.send(
+        f"✅ Successfully registered!\n"
+        f"**Username:** {username}\n"
+        f"**Player:** {player_name}\n"
+        f"**Tag:** {saved_tag}\n\n"
+        f"You can now use `/brawlstars player:{username}` instead of typing your tag!"
+    )
+
+
+@bot.tree.command(name="bsunregister", description="Remove your Brawl Stars registration")
+@app_commands.describe(
+    username="Your registered username"
+)
+async def bs_unregister(interaction: discord.Interaction, username: str):
+    await interaction.response.defer()
+    
+    if brawl_stars.unregister_player(username):
+        await interaction.followup.send(f"✅ Successfully removed registration for `{username}`")
+    else:
+        await interaction.followup.send(f"❌ No registration found for `{username}`")
 
 
 # ============================
@@ -174,6 +260,7 @@ async def fortnite_cmd(
 )
 @app_commands.choices(game=[
     app_commands.Choice(name="👑 Clash Royale", value="clashroyale"),
+    app_commands.Choice(name="⭐ Brawl Stars", value="brawlstars"),
     app_commands.Choice(name="🎮 Fortnite", value="fortnite")
 ])
 async def compare_cmd(
@@ -211,6 +298,35 @@ async def compare_cmd(
             return
         
         embed = clash_royale.build_clash_comparison_embed(data1, data2)
+        await interaction.followup.send(embed=embed)
+    
+    elif game.value == "brawlstars":
+        # Brawl Stars comparison
+        # Check for registered usernames
+        tag1 = brawl_stars.get_player_tag(player1)
+        if not tag1:
+            tag1 = player1
+            if not tag1.startswith("#"):
+                tag1 = "#" + tag1
+        
+        tag2 = brawl_stars.get_player_tag(player2)
+        if not tag2:
+            tag2 = player2
+            if not tag2.startswith("#"):
+                tag2 = "#" + tag2
+        
+        # Fetch both players
+        data1 = brawl_stars.fetch_brawl_stars_stats(tag1, BRAWL_STARS_API_KEY)
+        data2 = brawl_stars.fetch_brawl_stars_stats(tag2, BRAWL_STARS_API_KEY)
+        
+        if not data1:
+            await interaction.followup.send(f"❌ Could not find player: `{player1}`")
+            return
+        if not data2:
+            await interaction.followup.send(f"❌ Could not find player: `{player2}`")
+            return
+        
+        embed = brawl_stars.build_brawl_stars_comparison_embed(data1, data2)
         await interaction.followup.send(embed=embed)
     
     elif game.value == "fortnite":
