@@ -1,6 +1,6 @@
 # 🎮 Multi-Game Stats Discord Bot
 
-A modular Discord bot for Clash Royale and Fortnite stats with player registration and comparison features!
+A modular Discord bot for Clash Royale, Brawl Stars, and Fortnite stats with player registration and comparison features!
 
 ## 📁 Project Structure
 
@@ -9,9 +9,11 @@ VideoGameStats/
 ├── venv/                                # Virtual environment (auto-generated)
 ├── main_bot.py                          # Main bot file - run this!
 ├── clash_royale.py                      # Clash Royale module
+├── brawl_stars.py                       # Brawl Stars module
 ├── fortnite.py                          # Fortnite module
 ├── test_apis.py                         # Interactive API testing
 ├── clash_royale_registrations.json      # Auto-generated player registrations
+├── brawl_stars_registrations.json       # Auto-generated player registrations
 ├── .env                                 # Your API keys (DON'T COMMIT!)
 ├── .gitignore                           # Prevents committing sensitive files
 └── README.md                            # This file
@@ -83,18 +85,21 @@ DISCORD_TOKEN=your_discord_bot_token_here
 # Clash Royale API Key (from https://developer.clashroyale.com)
 CLASH_ROYALE_API_KEY=your_clash_royale_api_key_here
 
+# Brawl Stars API Key (from https://developer.brawlstars.com)
+BRAWL_STARS_API_KEY=your_brawl_stars_api_key_here
+
 # Fortnite API Key (from https://fortnite-api.com)
 FORTNITE_API_KEY=ea2d6b3f-dc35-4dfe-a383-131aff8ab7cf
 ```
 
 **⚠️ Security Note:** Never commit your `.env` file to Git! It's already in `.gitignore`.
 
-### 4. Fix Clash Royale API Key Issue
+### 4. Fix Clash Royale & Brawl Stars API Keys
 
-The "Invalid IP address" error means you need to whitelist your IP:
+Both Supercell games require IP whitelisting for their API keys.
 
 **Option A: Allow All IPs (Easiest for Development)**
-- In the Clash Royale API Key creation form
+- In the API Key creation form (Clash Royale or Brawl Stars)
 - Under "ALLOWED IP ADDRESSES", enter: **`0.0.0.0/0`** (with the `/0`!)
 - This allows requests from any IP address
 - Perfect for testing and development
@@ -105,7 +110,11 @@ The "Invalid IP address" error means you need to whitelist your IP:
 3. In the API Key form, enter your IP address (just the numbers, no `/0`)
 4. Click "Create Key"
 
-**Note:** If you're on a dynamic IP (changes frequently), use Option A or you'll need to update the key regularly.
+**Note:** If you're on a dynamic IP (changes frequently), use Option A or you'll need to update the keys regularly.
+
+**API Developer Portals:**
+- Clash Royale: https://developer.clashroyale.com
+- Brawl Stars: https://developer.brawlstars.com
 
 ### 5. Create .gitignore (Important!)
 
@@ -186,6 +195,19 @@ This interactive tool lets you:
 /clashroyale player:john  # Instead of /clashroyale player:#2ABC123
 ```
 
+### Brawl Stars Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/brawlstars` | Get player stats | `/brawlstars player:#Q8YYOJU` |
+| `/bsregister` | Register your player tag | `/bsregister username:john player_tag:#Q8YYOJU` |
+| `/bsunregister` | Remove registration | `/bsunregister username:john` |
+
+**After registering**, you can use your username instead of typing your tag:
+```
+/brawlstars player:john  # Instead of /brawlstars player:#Q8YYOJU
+```
+
 ### Fortnite Commands
 
 | Command | Description | Example |
@@ -198,32 +220,40 @@ This interactive tool lets you:
 | Command | Description | Example |
 |---------|-------------|---------|
 | `/compare` | Compare players (any game) | `/compare game:Clash Royale player1:#ABC player2:#XYZ` |
+|  | | `/compare game:Brawl Stars player1:john player2:#XYZ` |
 
 **Note:** For Fortnite, use `/fncompare` to specify platforms.
 
 ## 🎯 Features
 
 ### ✅ Modular Design
-- Each game has its own module (`clash_royale.py`, `fortnite.py`)
+- Each game has its own module (`clash_royale.py`, `brawl_stars.py`, `fortnite.py`)
 - Easy to add new games
 - Cleaner code organization
 
-### ✅ Player Registration (Clash Royale)
-- Save your player tag once
+### ✅ Player Registration (Supercell Games)
+- Save your player tag once for Clash Royale
+- Save your player tag once for Brawl Stars
 - Use your username for all future lookups
-- Stored in `clash_royale_registrations.json`
+- Stored in separate JSON files per game
 
 ### ✅ Comparison System
 - Compare two Clash Royale players
+- Compare two Brawl Stars players
 - Compare two Fortnite players
 - AI-powered win probability predictions
 - Detailed stat breakdowns
 
+### ✅ Beautiful Embeds
+- **Clash Royale**: Trophies, battles, clan info, current deck, badges
+- **Brawl Stars**: Trophies, victories, top 5 brawlers, collection stats
+- **Fortnite**: Overall stats, mode breakdowns (Solo/Duo/Squad), battle pass
+
 ### ✅ Testing Tools
 - Interactive API tester (`test_apis.py`)
+- Test all 3 games
 - View full JSON responses
 - Save responses as files for debugging
-- Test before deploying
 
 ## 🔧 Troubleshooting
 
@@ -262,9 +292,10 @@ deactivate
 4. Verify virtual environment is activated
 
 **Registration Not Working**
-- The bot creates `clash_royale_registrations.json` automatically
+- The bot creates registration JSON files automatically (one per game)
 - Make sure the bot has write permissions in the folder
-- Check the file exists after first registration
+- Check the files exist after first registration
+- Files created: `clash_royale_registrations.json`, `brawl_stars_registrations.json`
 
 **"ImportError: No module named..." errors**
 - Activate virtual environment: `source venv/bin/activate` (Mac/Linux) or `venv\Scripts\activate` (Windows)
@@ -272,7 +303,9 @@ deactivate
 
 ## 📊 Example Usage
 
-### Register Once, Use Forever (Clash Royale)
+### Register Once, Use Forever (Supercell Games)
+
+**Clash Royale:**
 ```
 User: /crregister username:john player_tag:#2ABC123
 Bot:  ✅ Successfully registered!
@@ -284,6 +317,21 @@ User: /clashroyale player:john
 Bot:  [Shows full stats with deck, badges, and more]
 
 User: /compare game:Clash Royale player1:john player2:#XYZ999
+Bot:  [Shows comparison with win prediction]
+```
+
+**Brawl Stars:**
+```
+User: /bsregister username:vhas21 player_tag:#Q8YYOJU
+Bot:  ✅ Successfully registered!
+      Username: vhas21
+      Player: Vhas21
+      Tag: #Q8YYOJU
+
+User: /brawlstars player:vhas21
+Bot:  [Shows stats with top 5 brawlers, trophies, victories]
+
+User: /compare game:Brawl Stars player1:vhas21 player2:#ABC123
 Bot:  [Shows comparison with win prediction]
 ```
 
@@ -324,11 +372,12 @@ Edit the weight values in comparison functions:
 ## 📝 Important Notes
 
 - **Virtual environment must be activated** before running the bot
-- Player registrations are saved locally in JSON
+- Player registrations are saved locally in JSON files (one per game)
 - Bot requires `Send Messages` and `Embed Links` permissions in Discord
-- Clash Royale tags must include the `#` symbol
+- **Clash Royale & Brawl Stars tags** must include the `#` symbol
 - Fortnite requires platform specification
 - Never commit your `.env` file or API keys to Git
+- Supercell APIs require IP whitelisting (use `0.0.0.0/0` for development)
 
 ## 🔄 Daily Workflow
 
